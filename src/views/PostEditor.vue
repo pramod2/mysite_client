@@ -37,6 +37,34 @@
         </v-btn>
       </div>
     </editor-floating-menu>
+
+    <editor-menu-bubble
+      :editor="editor"
+      :keep-in-bounds="keepInBounds"
+      v-slot="{ commands, isActive, menu }"
+    >
+      <div
+        class="menububble"
+        :class="{ 'is-active': menu.isActive }"
+        :style="`left: ${menu.left}px; bottom: ${menu.bottom}px;`"
+      >
+        <v-btn
+          v-for="menuBtn in menuBubbleBtns"
+          :key="menuBtn.icon"
+          text
+          style="min-width: 0"
+          class="pa-1"
+          :class="{ 'is-active': isActive[menuBtn.name](menuBtn.params) }"
+          @click="commands[menuBtn.name](menuBtn.params)"
+        >
+          <!-- strike icon seems too big, so passing "dense" prop only for it -->
+          <v-icon color="white" :dense="menuBtn.name === 'strike' ? true : false">{{
+            menuBtn.icon
+          }}</v-icon>
+        </v-btn>
+      </div>
+    </editor-menu-bubble>
+
     <editor-content class="editor__content" :editor="editor" />
     <v-btn>Submit</v-btn>
   </div>
@@ -44,7 +72,7 @@
 
 <script>
 import {
-  Editor, EditorContent, EditorFloatingMenu, EditorMenuBar,
+  Editor, EditorContent, EditorFloatingMenu, EditorMenuBubble, EditorMenuBar,
 } from 'tiptap';
 
 import {
@@ -72,9 +100,17 @@ export default {
     EditorContent,
     EditorMenuBar,
     EditorFloatingMenu,
+    EditorMenuBubble,
   },
   data() {
     return {
+      keepInBounds: true,
+      menuBubbleBtns: [
+        { name: 'bold', icon: 'mdi-format-bold' },
+        { name: 'italic', icon: 'mdi-format-italic' },
+        { name: 'strike', icon: 'mdi-format-strikethrough-variant' },
+        { name: 'underline', icon: 'mdi-format-underline' },
+      ],
       menuBtns: [
         { name: 'bold', icon: 'mdi-format-bold' },
         { name: 'italic', icon: 'mdi-format-italic' },
@@ -163,6 +199,28 @@ export default {
 .editor__floating-menu {
   position: absolute;
   z-index: 1;
+  visibility: hidden;
+  opacity: 0;
+  -webkit-transition: opacity 0.2s, visibility 0.2s;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+
+.menububble.is-active {
+  visibility: visible;
+  opacity: 1;
+}
+
+.menububble {
+  position: absolute;
+  display: -webkit-box;
+  display: flex;
+  z-index: 20;
+  background: #000;
+  border-radius: 5px;
+  padding: 0.3rem;
+  margin-bottom: 0.5rem;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
   visibility: hidden;
   opacity: 0;
   -webkit-transition: opacity 0.2s, visibility 0.2s;
