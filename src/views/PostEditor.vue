@@ -17,13 +17,36 @@
       </div>
     </editor-menu-bar>
 
+    <editor-floating-menu :editor="editor" v-slot="{ commands, isActive, menu }">
+      <div
+        class="editor__floating-menu"
+        :class="{ 'is-active': isMenuActive(commands, isActive, menu) }"
+        :style="`top: ${menu.top}px`"
+      >
+        <v-btn
+          v-for="menuBtn in floatingMenuBtns"
+          :key="menuBtn.icon"
+          text
+          style="min-width: 0"
+          class="pa-1"
+          :class="{ 'is-active': isActive[menuBtn.name](menuBtn.params) }"
+          @click="commands[menuBtn.name](menuBtn.params)"
+        >
+          <!-- strike icon seems too big, so passing "dense" prop only for it -->
+          <v-icon :dense="menuBtn.name === 'strike' ? true : false">{{ menuBtn.icon }}</v-icon>
+        </v-btn>
+      </div>
+    </editor-floating-menu>
     <editor-content class="editor__content" :editor="editor" />
     <v-btn>Submit</v-btn>
   </div>
 </template>
 
 <script>
-import { Editor, EditorContent, EditorMenuBar } from 'tiptap';
+import {
+  Editor, EditorContent, EditorFloatingMenu, EditorMenuBar,
+} from 'tiptap';
+
 import {
   Blockquote,
   CodeBlock,
@@ -48,6 +71,7 @@ export default {
   components: {
     EditorContent,
     EditorMenuBar,
+    EditorFloatingMenu,
   },
   data() {
     return {
@@ -65,6 +89,13 @@ export default {
         { name: 'blockquote', icon: 'mdi-format-quote-close' },
         { name: 'code_block', icon: 'mdi-code-brackets' },
         { name: 'horizontal_rule', icon: 'mdi-dots-horizontal' },
+      ],
+
+      floatingMenuBtns: [
+        { name: 'bold', icon: 'mdi-format-bold' },
+        { name: 'italic', icon: 'mdi-format-italic' },
+        { name: 'underline', icon: 'mdi-format-underline' },
+        { name: 'code_block', icon: 'mdi-code-brackets' },
       ],
 
       editor: new Editor({
@@ -112,8 +143,29 @@ export default {
       }),
     };
   },
+  methods: {
+    isMenuActive(commands, isActive, menu) {
+      console.log(menu);
+      return menu.isActive;
+    },
+  },
   beforeDestroy() {
     this.editor.destroy();
   },
 };
 </script>
+<style>
+.editor__floating-menu.is-active {
+  visibility: visible;
+  opacity: 1;
+}
+
+.editor__floating-menu {
+  position: absolute;
+  z-index: 1;
+  visibility: hidden;
+  opacity: 0;
+  -webkit-transition: opacity 0.2s, visibility 0.2s;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+</style>
