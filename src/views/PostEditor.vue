@@ -20,7 +20,7 @@
     <editor-floating-menu :editor="editor" v-slot="{ commands, isActive, menu }">
       <div
         class="editor__floating-menu"
-        :class="{ 'is-active': isMenuActive(commands, isActive, menu) }"
+        :class="{ 'is-active': menu.isActive }"
         :style="`top: ${menu.top}px`"
       >
         <v-btn
@@ -41,21 +41,50 @@
     <editor-menu-bubble
       :editor="editor"
       :keep-in-bounds="keepInBounds"
-      v-slot="{ commands, isActive, menu }"
+      v-slot="{ commands, isActive, getMarkAttrs, menu }"
+      @hide="hideLinkMenu"
     >
       <div
         class="menububble"
         :class="{ 'is-active': menu.isActive }"
         :style="`left: ${menu.left}px; bottom: ${menu.bottom}px;`"
       >
+        <v-form
+          class="menububble__form"
+          v-if="linkMenuIsActive"
+          @submit.prevent="setLinkUrl(commands.link, linkUrl)"
+        >
+          <input
+            class="menububble__input"
+            type="text"
+            v-model="linkUrl"
+            placeholder="Eg: www.domain.com"
+            ref="linkInput"
+            @keydown.esc="hideLinkMenu"
+          />
+          <v-btn
+            icon
+            class="menububble__button"
+            @click="setLinkUrl(commands.link, null)"
+            type="button"
+          >
+            <v-icon color="white">mdi-close</v-icon>
+          </v-btn>
+        </v-form>
+
         <v-btn
+          v-else
           v-for="menuBtn in menuBubbleBtns"
           :key="menuBtn.icon"
           text
           style="min-width: 0"
           class="pa-1"
           :class="{ 'is-active': isActive[menuBtn.name](menuBtn.params) }"
-          @click="commands[menuBtn.name](menuBtn.params)"
+          @click="
+            menuBtn.name === 'link'
+              ? showLinkMenu(getMarkAttrs('link'))
+              : commands[menuBtn.name](menuBtn.params)
+          "
         >
           <!-- strike icon seems too big, so passing "dense" prop only for it -->
           <v-icon color="white" :dense="menuBtn.name === 'strike' ? true : false">{{
@@ -102,15 +131,20 @@ export default {
     EditorFloatingMenu,
     EditorMenuBubble,
   },
+
   data() {
     return {
+      linkUrl: null,
+      linkMenuIsActive: false,
       keepInBounds: true,
       menuBubbleBtns: [
+        { name: 'link', icon: 'mdi-link-variant', params: null },
         { name: 'bold', icon: 'mdi-format-bold' },
         { name: 'italic', icon: 'mdi-format-italic' },
         { name: 'strike', icon: 'mdi-format-strikethrough-variant' },
         { name: 'underline', icon: 'mdi-format-underline' },
       ],
+
       menuBtns: [
         { name: 'bold', icon: 'mdi-format-bold' },
         { name: 'italic', icon: 'mdi-format-italic' },
@@ -154,6 +188,7 @@ export default {
           new Underline(),
           new History(),
         ],
+
         content: `
           <h2>
             Hi there,
@@ -179,12 +214,29 @@ export default {
       }),
     };
   },
+
   methods: {
-    isMenuActive(commands, isActive, menu) {
-      console.log(menu);
-      return menu.isActive;
+    showLinkMenu(attrs) {
+      //   this.hideMenuBubble();
+      this.linkUrl = attrs.href;
+      this.linkMenuIsActive = true;
+      this.$nextTick(() => {
+        console.log(this.$refs);
+        this.$refs.linkInput.focus();
+      });
+    },
+
+    hideLinkMenu() {
+      this.linkUrl = null;
+      this.linkMenuIsActive = false;
+    },
+
+    setLinkUrl(command, url) {
+      command({ href: url });
+      this.hideLinkMenu();
     },
   },
+
   beforeDestroy() {
     this.editor.destroy();
   },
@@ -225,5 +277,12 @@ export default {
   opacity: 0;
   -webkit-transition: opacity 0.2s, visibility 0.2s;
   transition: opacity 0.2s, visibility 0.2s;
+}
+
+.menububble__input {
+  font: inherit;
+  border: none;
+  background: transparent;
+  color: #fff;
 }
 </style>
