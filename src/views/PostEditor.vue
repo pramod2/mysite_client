@@ -30,10 +30,13 @@
           style="min-width: 0"
           class="pa-1"
           :class="{ 'is-active': isActive[menuBtn.name](menuBtn.params) }"
-          @click="commands[menuBtn.name](menuBtn.params)"
+          @click="
+            menuBtn.name === 'image'
+              ? showImagePrompt(commands.image)
+              : commands[menuBtn.name](menuBtn.params)
+          "
         >
-          <!-- strike icon seems too big, so passing "dense" prop only for it -->
-          <v-icon :dense="menuBtn.name === 'strike' ? true : false">{{ menuBtn.icon }}</v-icon>
+          <v-icon>{{ menuBtn.icon }}</v-icon>
         </v-btn>
       </div>
     </editor-floating-menu>
@@ -110,6 +113,7 @@ import {
   HardBreak,
   Heading,
   HorizontalRule,
+  Image,
   OrderedList,
   BulletList,
   ListItem,
@@ -166,6 +170,7 @@ export default {
         { name: 'italic', icon: 'mdi-format-italic' },
         { name: 'underline', icon: 'mdi-format-underline' },
         { name: 'code_block', icon: 'mdi-code-brackets' },
+        { name: 'image', icon: 'mdi-image' },
       ],
 
       editor: new Editor({
@@ -176,6 +181,7 @@ export default {
           new HardBreak(),
           new Heading({ levels: [1, 2, 3] }),
           new HorizontalRule(),
+          new Image(),
           new ListItem(),
           new OrderedList(),
           new TodoItem(),
@@ -216,6 +222,14 @@ export default {
   },
 
   methods: {
+    showImagePrompt(command) {
+      // eslint-disable-next-line no-alert
+      const src = prompt('Enter the url of your image here');
+      if (src !== null) {
+        command({ src });
+      }
+    },
+
     showLinkMenu(attrs) {
       //   this.hideMenuBubble();
       this.linkUrl = attrs.href;
